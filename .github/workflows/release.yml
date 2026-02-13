@@ -18,7 +18,7 @@ jobs:
       - name: Verify CHANGELOG entry exists for tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          if ! grep -qE "^## \[${VERSION}\]" CHANGELOG.md; then
+          if ! grep -Fq "## [${VERSION}]" CHANGELOG.md; then
             echo "::error::CHANGELOG.md has no entry for version ${VERSION}"
             exit 1
           fi

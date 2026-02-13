@@ -152,7 +152,7 @@ function renderDownloadCard(task) {
   const pct =
     task.size > 0 ? Math.round((task.bytesDownloaded / task.size) * 100) : 0;
   const config = STATUS_CONFIG[task.status] || {};
-  const detailHtml =
+  const detailText =
     typeof config.detail === "function"
       ? config.detail(task)
       : config.detail || "";
@@ -170,15 +170,15 @@ function renderDownloadCard(task) {
       ? `<div class="dl-error">${escapeHtml(task.error)}</div>`
       : "";
 
-  return `<div class="dl-card status-${task.status}" data-task-id="${escapeHtml(task.id)}">
+  return `<div class="dl-card status-${escapeHtml(task.status)}" data-task-id="${escapeHtml(task.id)}">
     <div class="dl-card-header">
       <span class="dl-name" title="${escapeHtml(task.name)}">${escapeHtml(task.name)}</span>
       ${retryHtml}${cancelHtml}
     </div>
     <div class="dl-progress-bar"><div class="dl-progress-fill" style="width:${pct}%"></div></div>
     <div class="dl-info">
-      <span>${detailHtml}</span>
-      <span class="dl-badge ${task.status}">${task.status}</span>
+      <span>${escapeHtml(detailText)}</span>
+      <span class="dl-badge ${escapeHtml(task.status)}">${escapeHtml(task.status)}</span>
     </div>
     ${errorHtml}
   </div>`;

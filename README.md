@@ -1,5 +1,12 @@
 # mega-dl-webui
 
+[![CI](https://github.com/forbish/mega-dl-webui/actions/workflows/ci.yml/badge.svg)](https://github.com/forbish/mega-dl-webui/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/forbish/mega-dl-webui/actions/workflows/codeql.yml/badge.svg)](https://github.com/forbish/mega-dl-webui/actions/workflows/codeql.yml)
+[![Release](https://github.com/forbish/mega-dl-webui/actions/workflows/release.yml/badge.svg)](https://github.com/forbish/mega-dl-webui/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/github/license/forbish/mega-dl-webui)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/container-distroless-blue)](https://github.com/GoogleContainerTools/distroless)
+
 A lightweight, self-hosted web UI for downloading shared files and folders from MEGA.
 
 ## Features

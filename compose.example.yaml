@@ -1,6 +1,6 @@
 services:
   mega-dl-webui:
-    image: ghcr.io/forbish/mega-dl-webui:latest
+    image: ghcr.io/forbish/mega-dl-webui:latest@sha256:03d7e8c1392a264936a5753d2c588ed09262102e875217e80a53ecbdb03879b6
     user: 1000:1000
     read_only: true
     security_opt:

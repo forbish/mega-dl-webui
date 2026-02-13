@@ -1,0 +1,3 @@
+# DL3007: pin distroless to digest in CI, :latest acceptable for local builds
+ignored:
+  - DL3007

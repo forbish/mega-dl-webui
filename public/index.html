@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MEGA Downloader</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬇️</text></svg>"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+      <symbol
+        id="icon-sun"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      </symbol>
+      <symbol
+        id="icon-moon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+      </symbol>
+      <symbol
+        id="icon-folder"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"
+        />
+      </symbol>
+      <symbol
+        id="icon-file"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
+        <polyline points="13 2 13 9 20 9" />
+      </symbol>
+      <symbol
+        id="icon-x"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </symbol>
+      <symbol
+        id="icon-download"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </symbol>
+      <symbol
+        id="icon-spinner"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+        />
+      </symbol>
+      <symbol
+        id="icon-chevron"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="9 18 15 12 9 6" />
+      </symbol>
+    </svg>
+
+    <header>
+      <div class="header-content">
+        <h1>
+          <svg class="icon icon-lg" aria-hidden="true">
+            <use href="#icon-download" />
+          </svg>
+          MEGA Downloader
+        </h1>
+        <button
+          id="theme-toggle"
+          title="Toggle theme"
+          aria-label="Toggle theme"
+        >
+          <svg class="icon theme-icon-sun">
+            <use href="#icon-sun" />
+          </svg>
+          <svg class="icon theme-icon-moon">
+            <use href="#icon-moon" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="url-input">
+        <form id="url-form">
+          <div class="input-group">
+            <input
+              type="url"
+              id="mega-url"
+              placeholder="Paste a mega.nz link..."
+              required
+              autocomplete="off"
+            />
+            <button type="submit" id="load-btn">
+              <span class="btn-text">Load</span>
+              <svg class="icon btn-spinner">
+                <use href="#icon-spinner" />
+              </svg>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section id="file-browser" class="file-browser hidden">
+        <div class="browser-header">
+          <h2 id="folder-name">Folder Name</h2>
+          <div class="browser-actions">
+            <button id="select-all">Select All</button>
+            <button id="select-none">Select None</button>
+            <button id="download-selected" class="primary">
+              <svg class="icon">
+                <use href="#icon-download" />
+              </svg>
+              Download Selected
+            </button>
+          </div>
+        </div>
+        <div id="file-tree" class="file-tree"></div>
+      </section>
+
+      <section id="downloads-section" class="downloads-section">
+        <div class="downloads-header">
+          <h2>Downloads</h2>
+          <div class="downloads-header-actions">
+            <label
+              class="verify-toggle"
+              title="Verify file integrity after download using MEGA's MAC"
+            >
+              <input type="checkbox" id="verify-downloads" />
+              Verify
+            </label>
+            <button id="clear-completed" class="clear-btn hidden">
+              Clear Finished
+            </button>
+          </div>
+        </div>
+        <div id="dl-summary" class="dl-summary"></div>
+        <div id="downloads-list" class="downloads-list"></div>
+        <div id="no-downloads" class="empty-state">
+          <svg class="icon icon-xl" aria-hidden="true">
+            <use href="#icon-download" />
+          </svg>
+          <p>No downloads yet. Paste a MEGA link above to get started.</p>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

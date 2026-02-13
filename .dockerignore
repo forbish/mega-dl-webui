@@ -1,0 +1,11 @@
+node_modules
+.git
+.github
+downloads
+test
+*.md
+.env
+.editorconfig
+.node-version
+compose.*.yaml
+renovate.json

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # -- Build stage --
-FROM node:22.22.0-bookworm-slim AS build
+FROM node:22.22.0-bookworm-slim@sha256:5373f1906319b3a1f291da5d102f4ce5c77ccbe29eb637f072b6c7b70443fc36 AS build
 
 WORKDIR /app
 

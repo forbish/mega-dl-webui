@@ -13,7 +13,7 @@ COPY public/ public/
 COPY healthcheck.js ./
 
 # -- Runtime stage --
-FROM gcr.io/distroless/nodejs22-debian12@sha256:61ac74f7ae19c65e87fdfcd5a0b0cb7172074ecbbbf0c26820ec5c09fd2ff9d1
+FROM gcr.io/distroless/nodejs22-debian12@sha256:8a3e96fe3345b5d83ecec2066e7c498139a02a6d1214e4f6c39f9ce359f3f5bc
 
 LABEL org.opencontainers.image.title="mega-dl-webui" \
       org.opencontainers.image.description="Lightweight, self-hosted web UI for downloading shared files and folders from MEGA" \

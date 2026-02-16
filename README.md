@@ -9,6 +9,8 @@
 
 A lightweight, self-hosted web UI for downloading shared files and folders from MEGA.
 
+![mega-dl-webui screenshot](assets/screenshot.png)
+
 ## Features
 
 - **Clean, responsive UI** with light/dark mode and system preference auto-detection
@@ -25,7 +27,7 @@ A lightweight, self-hosted web UI for downloading shared files and folders from 
 services:
   mega-dl-webui:
     image: ghcr.io/forbish/mega-dl-webui:latest
-    user: 1000:1000
+    user: ${PUID:-1000}:${PGID:-1000}
     read_only: true
     security_opt:
       - no-new-privileges:true
@@ -36,7 +38,7 @@ services:
     environment:
       DOWNLOAD_DIR: /data
     volumes:
-      - ./downloads:/data
+      - ${DOWNLOAD_PATH:-./downloads}:/data
     tmpfs:
       - /tmp:noexec,nosuid,size=64m
     restart: unless-stopped

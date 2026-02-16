@@ -126,6 +126,17 @@ app.get(
   }),
 );
 
+if (process.env.NODE_ENV === "development") {
+  app.post(
+    "/api/demo",
+    asyncHandler(async (req, res) => {
+      const { populateDemo } = await import("./demo.js");
+      populateDemo(downloadManager);
+      res.json({ success: true });
+    }),
+  );
+}
+
 const server = createServer(app);
 
 const wss = new WebSocketServer({ server, path: "/ws" });

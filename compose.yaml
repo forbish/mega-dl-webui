@@ -1,7 +1,7 @@
 services:
   mega-dl-webui:
     image: ghcr.io/forbish/mega-dl-webui:latest@sha256:03d7e8c1392a264936a5753d2c588ed09262102e875217e80a53ecbdb03879b6
-    user: 1000:1000
+    user: ${PUID:-1000}:${PGID:-1000}
     read_only: true
     security_opt:
       - no-new-privileges:true
@@ -15,7 +15,7 @@ services:
       # RETRY_COUNT: 12
       # VERIFY_DOWNLOADS: true
     volumes:
-      - ./downloads:/data
+      - ${DOWNLOAD_PATH:-./downloads}:/data
     tmpfs:
       - /tmp:noexec,nosuid,size=64m
     restart: unless-stopped

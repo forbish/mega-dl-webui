@@ -281,7 +281,7 @@ export class DownloadManager extends EventEmitter {
 
   retryTask(id) {
     const task = this.tasks.get(id);
-    if (!task) return;
+    if (!task || task._demo) return;
     if (
       task.status !== TASK_STATUS.FAILED &&
       task.status !== TASK_STATUS.CANCELLED

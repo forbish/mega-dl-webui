@@ -10,6 +10,7 @@ services:
     ports:
       - 8080:8080
     environment:
+      NODE_ENV: development
       DOWNLOAD_DIR: /data
       # MAX_CONCURRENT: 4
       # RETRY_COUNT: 12

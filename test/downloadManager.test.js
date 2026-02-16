@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { DownloadManager } from "../server/downloadManager.js";
+import { TASK_STATUS } from "../server/constants.js";
 
 describe("DownloadManager", () => {
   describe("_sanitizeTask", () => {
@@ -57,11 +58,40 @@ describe("DownloadManager", () => {
     });
   });
 
-  describe("clearCompleted", () => {
+  describe("clearFinished", () => {
     it("does nothing when no tasks exist", () => {
       const dm = new DownloadManager("/tmp");
-      dm.clearCompleted();
+      dm.clearFinished();
       assert.deepEqual(dm.getStatus(), []);
+    });
+
+    it("removes completed, skipped, and cancelled but preserves failed", () => {
+      const dm = new DownloadManager("/tmp");
+      const makeTask = (id, status) => ({
+        id,
+        name: `${id}.txt`,
+        size: 100,
+        status,
+        bytesDownloaded: 100,
+        speed: 0,
+        error: status === TASK_STATUS.FAILED ? "test error" : null,
+        startedAt: null,
+        completedAt: null,
+        _stream: null,
+        _existingStat: null,
+      });
+
+      dm.tasks.set("s1-0", makeTask("s1-0", TASK_STATUS.COMPLETED));
+      dm.tasks.set("s1-1", makeTask("s1-1", TASK_STATUS.SKIPPED));
+      dm.tasks.set("s1-2", makeTask("s1-2", TASK_STATUS.CANCELLED));
+      dm.tasks.set("s1-3", makeTask("s1-3", TASK_STATUS.FAILED));
+
+      dm.clearFinished();
+
+      const remaining = dm.getStatus();
+      assert.equal(remaining.length, 1);
+      assert.equal(remaining[0].id, "s1-3");
+      assert.equal(remaining[0].status, TASK_STATUS.FAILED);
     });
   });
 

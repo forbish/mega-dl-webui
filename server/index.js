@@ -71,7 +71,7 @@ app.post(
 app.post(
   "/api/clear",
   asyncHandler((req, res) => {
-    downloadManager.clearCompleted();
+    downloadManager.clearFinished();
     broadcastQueue.clear();
     broadcastToClients(
       wss,

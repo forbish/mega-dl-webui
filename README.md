@@ -55,7 +55,7 @@ Open [http://localhost:8080](http://localhost:8080) and paste a MEGA link.
 | `DOWNLOAD_DIR`     | `/data` | Download directory inside the container                      |
 | `PORT`             | `8080`  | HTTP server port                                             |
 | `MAX_CONCURRENT`   | `4`     | Maximum parallel downloads (megajs default)                  |
-| `RETRY_COUNT`      | `8`     | Retry attempts per download with exponential backoff         |
+| `RETRY_COUNT`      | `12`    | Retry attempts per download with exponential backoff         |
 | `VERIFY_DOWNLOADS` | `true`  | Verify file integrity (MAC) after download. Toggleable in UI |
 
 Set `user: "UID:GID"` in your compose file to control file ownership.

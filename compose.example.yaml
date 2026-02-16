@@ -12,7 +12,7 @@ services:
     environment:
       DOWNLOAD_DIR: /data
       # MAX_CONCURRENT: 4
-      # RETRY_COUNT: 8
+      # RETRY_COUNT: 12
       # VERIFY_DOWNLOADS: true
     volumes:
       - ./downloads:/data

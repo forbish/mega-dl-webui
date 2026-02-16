@@ -11,7 +11,7 @@ import { assertPathSafe } from "./utils.js";
 export class DownloadManager extends EventEmitter {
   constructor(
     downloadDir,
-    { maxConcurrent = 4, retryCount = 8, verifyDownloads = true } = {},
+    { maxConcurrent = 4, retryCount = 12, verifyDownloads = true } = {},
   ) {
     super();
     this.downloadDir = downloadDir;
@@ -295,6 +295,20 @@ export class DownloadManager extends EventEmitter {
     task._existingStat = null;
     this.queue.push(id);
     this.emit("task:update", this._sanitizeTask(task));
+    this._processQueue();
+  }
+
+  retryAllFailed() {
+    for (const [id, task] of this.tasks) {
+      if (task.status !== TASK_STATUS.FAILED) continue;
+      task.status = TASK_STATUS.PENDING;
+      task.error = null;
+      task.speed = 0;
+      task.completedAt = null;
+      task._existingStat = null;
+      this.queue.push(id);
+      this.emit("task:update", this._sanitizeTask(task));
+    }
     this._processQueue();
   }
 

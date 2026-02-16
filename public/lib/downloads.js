@@ -118,6 +118,21 @@ export async function retryDownload(taskId) {
   }
 }
 
+export async function retryAllFailed() {
+  try {
+    const res = await fetch("/api/retry-all", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Retry failed");
+    }
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+
 export async function clearFinished() {
   try {
     const res = await fetch("/api/clear", {
@@ -189,6 +204,7 @@ function updateDownloadSummary() {
 
   if (state.downloads.size === 0) {
     el.textContent = "";
+    $("#retry-all-failed").classList.add("hidden");
     $("#clear-finished").classList.add("hidden");
     return;
   }
@@ -203,6 +219,9 @@ function updateDownloadSummary() {
   if (counts.cancelled) parts.push(`${counts.cancelled} cancelled`);
 
   el.textContent = parts.join(" · ");
+
+  const retryBtn = $("#retry-all-failed");
+  retryBtn.classList.toggle("hidden", !counts.failed);
 
   const clearBtn = $("#clear-finished");
   const hasFinished = counts.completed || counts.skipped || counts.cancelled;

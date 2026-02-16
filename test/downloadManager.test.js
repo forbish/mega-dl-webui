@@ -95,11 +95,47 @@ describe("DownloadManager", () => {
     });
   });
 
+  describe("retryAllFailed", () => {
+    it("does nothing when no tasks exist", () => {
+      const dm = new DownloadManager("/tmp");
+      dm.retryAllFailed();
+      assert.deepEqual(dm.getStatus(), []);
+    });
+
+    it("retries failed tasks and leaves others unchanged", () => {
+      const dm = new DownloadManager("/tmp", { maxConcurrent: 0 });
+      const makeTask = (id, status) => ({
+        id,
+        name: `${id}.txt`,
+        size: 100,
+        status,
+        bytesDownloaded: 0,
+        speed: 0,
+        error: status === TASK_STATUS.FAILED ? "network error" : null,
+        destPath: `/tmp/${id}.txt`,
+        startedAt: null,
+        completedAt: null,
+      });
+
+      dm.tasks.set("s1-0", makeTask("s1-0", TASK_STATUS.FAILED));
+      dm.tasks.set("s1-1", makeTask("s1-1", TASK_STATUS.COMPLETED));
+      dm.tasks.set("s1-2", makeTask("s1-2", TASK_STATUS.PENDING));
+      dm.tasks.set("s1-3", makeTask("s1-3", TASK_STATUS.CANCELLED));
+
+      dm.retryAllFailed();
+
+      assert.equal(dm.tasks.get("s1-0").status, TASK_STATUS.PENDING);
+      assert.equal(dm.tasks.get("s1-1").status, TASK_STATUS.COMPLETED);
+      assert.equal(dm.tasks.get("s1-2").status, TASK_STATUS.PENDING);
+      assert.equal(dm.tasks.get("s1-3").status, TASK_STATUS.CANCELLED);
+    });
+  });
+
   describe("constructor defaults", () => {
     it("uses default settings", () => {
       const dm = new DownloadManager("/tmp");
       assert.equal(dm.maxConcurrent, 4);
-      assert.equal(dm.retryCount, 8);
+      assert.equal(dm.retryCount, 12);
       assert.equal(dm.verifyDownloads, true);
     });
 

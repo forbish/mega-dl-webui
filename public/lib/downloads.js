@@ -118,7 +118,7 @@ export async function retryDownload(taskId) {
   }
 }
 
-export async function clearCompleted() {
+export async function clearFinished() {
   try {
     const res = await fetch("/api/clear", {
       method: "POST",
@@ -190,7 +190,7 @@ function updateDownloadSummary() {
 
   if (state.downloads.size === 0) {
     el.textContent = "";
-    const clearBtn = $("#clear-completed");
+    const clearBtn = $("#clear-finished");
     clearBtn.classList.add("hidden");
     return;
   }
@@ -206,7 +206,7 @@ function updateDownloadSummary() {
 
   el.textContent = parts.join(" · ");
 
-  const clearBtn = $("#clear-completed");
+  const clearBtn = $("#clear-finished");
   const hasFinished =
     counts.completed || counts.skipped || counts.failed || counts.cancelled;
   clearBtn.classList.toggle("hidden", !hasFinished);

@@ -57,10 +57,10 @@ describe("DownloadManager", () => {
     });
   });
 
-  describe("clearCompleted", () => {
+  describe("clearFinished", () => {
     it("does nothing when no tasks exist", () => {
       const dm = new DownloadManager("/tmp");
-      dm.clearCompleted();
+      dm.clearFinished();
       assert.deepEqual(dm.getStatus(), []);
     });
   });

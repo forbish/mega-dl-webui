@@ -298,7 +298,7 @@ export class DownloadManager extends EventEmitter {
     this._processQueue();
   }
 
-  clearCompleted() {
+  clearFinished() {
     const terminal = new Set([
       TASK_STATUS.COMPLETED,
       TASK_STATUS.SKIPPED,

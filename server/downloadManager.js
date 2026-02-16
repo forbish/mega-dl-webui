@@ -298,16 +298,15 @@ export class DownloadManager extends EventEmitter {
     this._processQueue();
   }
 
-  clearCompleted() {
-    const terminal = new Set([
+  clearFinished() {
+    const clearable = new Set([
       TASK_STATUS.COMPLETED,
       TASK_STATUS.SKIPPED,
-      TASK_STATUS.FAILED,
       TASK_STATUS.CANCELLED,
     ]);
     const affectedSessions = new Set();
     for (const [id, task] of this.tasks) {
-      if (terminal.has(task.status)) {
+      if (clearable.has(task.status)) {
         this.tasks.delete(id);
         const sessionId = extractSessionId(id);
         affectedSessions.add(sessionId);

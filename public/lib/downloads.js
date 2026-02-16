@@ -118,7 +118,7 @@ export async function retryDownload(taskId) {
   }
 }
 
-export async function clearCompleted() {
+export async function clearFinished() {
   try {
     const res = await fetch("/api/clear", {
       method: "POST",
@@ -128,14 +128,13 @@ export async function clearCompleted() {
       const data = await res.json();
       throw new Error(data.error || "Clear failed");
     }
-    const terminal = new Set([
+    const clearable = new Set([
       TASK_STATUS.COMPLETED,
       TASK_STATUS.SKIPPED,
-      TASK_STATUS.FAILED,
       TASK_STATUS.CANCELLED,
     ]);
     for (const [id, task] of state.downloads) {
-      if (terminal.has(task.status)) {
+      if (clearable.has(task.status)) {
         if (state.downloadCounts[task.status] > 0) {
           state.downloadCounts[task.status]--;
         }
@@ -190,8 +189,7 @@ function updateDownloadSummary() {
 
   if (state.downloads.size === 0) {
     el.textContent = "";
-    const clearBtn = $("#clear-completed");
-    clearBtn.classList.add("hidden");
+    $("#clear-finished").classList.add("hidden");
     return;
   }
 
@@ -206,9 +204,8 @@ function updateDownloadSummary() {
 
   el.textContent = parts.join(" · ");
 
-  const clearBtn = $("#clear-completed");
-  const hasFinished =
-    counts.completed || counts.skipped || counts.failed || counts.cancelled;
+  const clearBtn = $("#clear-finished");
+  const hasFinished = counts.completed || counts.skipped || counts.cancelled;
   clearBtn.classList.toggle("hidden", !hasFinished);
 }
 

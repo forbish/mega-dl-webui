@@ -29,7 +29,7 @@ ENV NODE_ENV=production \
     DOWNLOAD_DIR=/data \
     PORT=8080 \
     MAX_CONCURRENT=4 \
-    RETRY_COUNT=8 \
+    RETRY_COUNT=12 \
     VERIFY_DOWNLOADS=true
 
 EXPOSE 8080

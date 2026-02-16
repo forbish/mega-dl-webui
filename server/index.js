@@ -12,8 +12,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = process.env.PORT || 8080;
 const DOWNLOAD_DIR = process.env.DOWNLOAD_DIR || "/data";
-const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT, 10) || 4;
-const RETRY_COUNT = parseInt(process.env.RETRY_COUNT, 10) || 8;
+const parsedMaxConcurrent = parseInt(process.env.MAX_CONCURRENT, 10);
+const MAX_CONCURRENT = Number.isNaN(parsedMaxConcurrent) ? 4 : parsedMaxConcurrent;
+const parsedRetryCount = parseInt(process.env.RETRY_COUNT, 10);
+const RETRY_COUNT = Number.isNaN(parsedRetryCount) ? 12 : parsedRetryCount;
 const VERIFY_DOWNLOADS = process.env.VERIFY_DOWNLOADS !== "false";
 
 const app = express();
@@ -64,6 +66,14 @@ app.post(
     const { taskId } = req.body;
     requireString(taskId, "taskId");
     downloadManager.retryTask(taskId);
+    res.json({ success: true });
+  }),
+);
+
+app.post(
+  "/api/retry-all",
+  asyncHandler((req, res) => {
+    downloadManager.retryAllFailed();
     res.json({ success: true });
   }),
 );

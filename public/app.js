@@ -12,6 +12,7 @@ import {
   cancelDownload,
   retryDownload,
   clearFinished,
+  retryAllFailed,
 } from "./lib/downloads.js";
 import { connectWs } from "./lib/websocket.js";
 
@@ -74,6 +75,7 @@ function init() {
     if (retryBtn) retryDownload(retryBtn.dataset.retry);
   });
 
+  $("#retry-all-failed").addEventListener("click", retryAllFailed);
   $("#clear-finished").addEventListener("click", clearFinished);
 
   $("#verify-downloads").addEventListener("change", async (e) => {

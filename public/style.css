@@ -7,59 +7,33 @@
 }
 
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f7;
-  --bg-tertiary: #e8e8ed;
-  --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --accent: #0071e3;
-  --accent-hover: #0077ed;
+  --bg-primary: light-dark(#ffffff, #1c1c1e);
+  --bg-secondary: light-dark(#f5f5f7, #2c2c2e);
+  --bg-tertiary: light-dark(#e8e8ed, #3a3a3c);
+  --text-primary: light-dark(#1d1d1f, #f5f5f7);
+  --text-secondary: light-dark(#6e6e73, #98989d);
+  --accent: light-dark(#0071e3, #0a84ff);
+  --accent-hover: light-dark(#0077ed, #409cff);
   --success: #30d158;
   --error: #ff453a;
   --warning: #ffd60a;
-  --border: #d2d2d7;
-  --shadow: rgba(0, 0, 0, 0.08);
+  --border: light-dark(#d2d2d7, #48484a);
+  --shadow: light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3));
   --radius: 10px;
   --radius-sm: 6px;
   --font:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
-  --header-bg: rgba(255, 255, 255, 0.8);
+  --header-bg: light-dark(rgba(255, 255, 255, 0.8), rgba(28, 28, 30, 0.8));
   color-scheme: light dark;
 }
 
-[data-theme="dark"] {
-  --bg-primary: #1c1c1e;
-  --bg-secondary: #2c2c2e;
-  --bg-tertiary: #3a3a3c;
-  --text-primary: #f5f5f7;
-  --text-secondary: #98989d;
-  --accent: #0a84ff;
-  --accent-hover: #409cff;
-  --success: #30d158;
-  --error: #ff453a;
-  --warning: #ffd60a;
-  --border: #48484a;
-  --shadow: rgba(0, 0, 0, 0.3);
-  --header-bg: rgba(28, 28, 30, 0.8);
+[data-theme="light"] {
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg-primary: #1c1c1e;
-    --bg-secondary: #2c2c2e;
-    --bg-tertiary: #3a3a3c;
-    --text-primary: #f5f5f7;
-    --text-secondary: #98989d;
-    --accent: #0a84ff;
-    --accent-hover: #409cff;
-    --success: #30d158;
-    --error: #ff453a;
-    --warning: #ffd60a;
-    --border: #48484a;
-    --shadow: rgba(0, 0, 0, 0.3);
-    --header-bg: rgba(28, 28, 30, 0.8);
-  }
+[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {
@@ -476,7 +450,7 @@ main {
 .verify-toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.8rem;
   color: var(--text-secondary);
   cursor: pointer;
@@ -484,7 +458,47 @@ main {
 }
 
 .verify-toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-track {
+  width: 34px;
+  height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  position: relative;
   cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.verify-toggle input[type="checkbox"]:checked + .toggle-track {
+  background: var(--accent);
+}
+
+.verify-toggle input[type="checkbox"]:checked + .toggle-track::after {
+  transform: translateX(14px);
+}
+
+.verify-toggle input[type="checkbox"]:focus-visible + .toggle-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .downloads-header h2 {
@@ -632,16 +646,13 @@ main {
   background: var(--error);
 }
 
-.status-pending .dl-progress-fill {
+.status-pending .dl-progress-fill,
+.status-cancelled .dl-progress-fill {
   background: var(--text-secondary);
 }
 
 .status-skipped .dl-progress-fill {
   background: var(--warning);
-}
-
-.status-cancelled .dl-progress-fill {
-  background: var(--text-secondary);
 }
 
 .status-downloading .dl-progress-fill {
@@ -666,12 +677,14 @@ main {
   flex-shrink: 0;
 }
 
-.dl-badge.pending {
+.dl-badge.pending,
+.dl-badge.cancelled {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
 }
 
-.dl-badge.downloading {
+.dl-badge.downloading,
+.dl-badge.verifying {
   background: rgba(10, 132, 255, 0.15);
   color: var(--accent);
 }
@@ -679,11 +692,6 @@ main {
 .dl-badge.completed {
   background: rgba(48, 209, 88, 0.15);
   color: var(--success);
-}
-
-.dl-badge.verifying {
-  background: rgba(10, 132, 255, 0.15);
-  color: var(--accent);
 }
 
 .dl-badge.failed {
@@ -694,11 +702,6 @@ main {
 .dl-badge.skipped {
   background: rgba(255, 214, 10, 0.15);
   color: #b89b00;
-}
-
-.dl-badge.cancelled {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
 }
 
 .dl-error {

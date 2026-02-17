@@ -4,6 +4,7 @@ import {
   updateSingleDownload,
   renderDownloads,
   checkAllDoneNotification,
+  updatePauseButton,
 } from "./downloads.js";
 
 let reconnectDelay = 1000;
@@ -30,6 +31,7 @@ export function connectWs() {
       state.downloadCounts = {
         pending: 0,
         downloading: 0,
+        paused: 0,
         verifying: 0,
         completed: 0,
         skipped: 0,
@@ -40,6 +42,10 @@ export function connectWs() {
         state.downloads.set(task.id, task);
         state.downloadCounts[task.status] =
           (state.downloadCounts[task.status] || 0) + 1;
+      }
+      if (typeof msg.paused === "boolean") {
+        state.paused = msg.paused;
+        updatePauseButton();
       }
       renderDownloads();
     } else if (
@@ -55,7 +61,8 @@ export function connectWs() {
       const hasActive = msg.data.some(
         (t) =>
           t.status === TASK_STATUS.DOWNLOADING ||
-          t.status === TASK_STATUS.PENDING,
+          t.status === TASK_STATUS.PENDING ||
+          t.status === TASK_STATUS.PAUSED,
       );
       if (hasActive) state.allDoneNotified = false;
 

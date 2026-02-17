@@ -659,6 +659,10 @@ main {
   background: linear-gradient(90deg, var(--accent), var(--accent-hover));
 }
 
+.status-paused .dl-progress-fill {
+  background: #ff9f0a;
+}
+
 .dl-info {
   display: flex;
   align-items: center;
@@ -687,6 +691,11 @@ main {
 .dl-badge.verifying {
   background: rgba(10, 132, 255, 0.15);
   color: var(--accent);
+}
+
+.dl-badge.paused {
+  background: rgba(255, 159, 10, 0.15);
+  color: #ff9f0a;
 }
 
 .dl-badge.completed {

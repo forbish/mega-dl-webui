@@ -35,6 +35,12 @@ const STATUS_CONFIG = {
     canCancel: false,
     canRetry: false,
   },
+  [TASK_STATUS.PAUSED]: {
+    detail: (task) =>
+      `${formatBytes(task.bytesDownloaded)} / ${formatBytes(task.size)} — Paused`,
+    canCancel: true,
+    canRetry: false,
+  },
   [TASK_STATUS.FAILED]: {
     detail: (task) =>
       `${formatBytes(task.bytesDownloaded)} / ${formatBytes(task.size)}`,
@@ -206,11 +212,13 @@ function updateDownloadSummary() {
     el.textContent = "";
     $("#retry-all-failed").classList.add("hidden");
     $("#clear-finished").classList.add("hidden");
+    updatePauseButton();
     return;
   }
 
   const parts = [];
   if (counts.downloading) parts.push(`${counts.downloading} downloading`);
+  if (counts.paused) parts.push(`${counts.paused} paused`);
   if (counts.verifying) parts.push(`${counts.verifying} verifying`);
   if (counts.pending) parts.push(`${counts.pending} pending`);
   if (counts.completed) parts.push(`${counts.completed} completed`);
@@ -226,6 +234,8 @@ function updateDownloadSummary() {
   const clearBtn = $("#clear-finished");
   const hasFinished = counts.completed || counts.skipped || counts.cancelled;
   clearBtn.classList.toggle("hidden", !hasFinished);
+
+  updatePauseButton();
 }
 
 export function renderDownloads() {
@@ -243,12 +253,13 @@ export function renderDownloads() {
   const sorted = Array.from(state.downloads.values()).sort((a, b) => {
     const order = {
       [TASK_STATUS.DOWNLOADING]: 0,
-      [TASK_STATUS.VERIFYING]: 1,
-      [TASK_STATUS.PENDING]: 2,
-      [TASK_STATUS.COMPLETED]: 3,
-      [TASK_STATUS.SKIPPED]: 4,
-      [TASK_STATUS.FAILED]: 5,
-      [TASK_STATUS.CANCELLED]: 6,
+      [TASK_STATUS.PAUSED]: 1,
+      [TASK_STATUS.VERIFYING]: 2,
+      [TASK_STATUS.PENDING]: 3,
+      [TASK_STATUS.COMPLETED]: 4,
+      [TASK_STATUS.SKIPPED]: 5,
+      [TASK_STATUS.FAILED]: 6,
+      [TASK_STATUS.CANCELLED]: 7,
     };
     return (order[a.status] ?? 9) - (order[b.status] ?? 9);
   });
@@ -276,6 +287,43 @@ export function updateSingleDownload(task) {
     renderDownloads();
   }
   updateDownloadSummary();
+}
+
+export function updatePauseButton() {
+  const btn = $("#pause-resume");
+  const hasActive =
+    state.downloadCounts.downloading > 0 ||
+    state.downloadCounts.pending > 0 ||
+    state.downloadCounts.paused > 0;
+  btn.classList.toggle("hidden", !hasActive);
+
+  if (state.paused) {
+    btn.textContent = "Resume";
+    btn.title = "Resume all downloads";
+  } else {
+    btn.textContent = "Pause";
+    btn.title = "Pause all downloads";
+  }
+}
+
+export async function togglePause() {
+  const endpoint = state.paused ? "/api/resume" : "/api/pause";
+  state.paused = !state.paused;
+  updatePauseButton();
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed");
+    }
+  } catch (err) {
+    state.paused = !state.paused;
+    updatePauseButton();
+    showToast(err.message, "error");
+  }
 }
 
 export function checkAllDoneNotification() {

@@ -1,6 +1,7 @@
 export const TASK_STATUS = Object.freeze({
   PENDING: "pending",
   DOWNLOADING: "downloading",
+  PAUSED: "paused",
   COMPLETED: "completed",
   FAILED: "failed",
   CANCELLED: "cancelled",

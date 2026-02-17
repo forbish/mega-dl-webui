@@ -79,6 +79,40 @@ app.post(
 );
 
 app.post(
+  "/api/pause",
+  asyncHandler((req, res) => {
+    downloadManager.pause();
+    broadcastQueue.clear();
+    broadcastToClients(
+      wss,
+      JSON.stringify({
+        type: WS_MESSAGE.STATUS,
+        tasks: downloadManager.getStatus(),
+        paused: downloadManager.paused,
+      }),
+    );
+    res.json({ paused: downloadManager.paused });
+  }),
+);
+
+app.post(
+  "/api/resume",
+  asyncHandler((req, res) => {
+    downloadManager.resume();
+    broadcastQueue.clear();
+    broadcastToClients(
+      wss,
+      JSON.stringify({
+        type: WS_MESSAGE.STATUS,
+        tasks: downloadManager.getStatus(),
+        paused: downloadManager.paused,
+      }),
+    );
+    res.json({ paused: downloadManager.paused });
+  }),
+);
+
+app.post(
   "/api/clear",
   asyncHandler((req, res) => {
     downloadManager.clearFinished();
@@ -88,6 +122,7 @@ app.post(
       JSON.stringify({
         type: WS_MESSAGE.STATUS,
         tasks: downloadManager.getStatus(),
+        paused: downloadManager.paused,
       }),
     );
     res.json({ success: true });
@@ -104,7 +139,10 @@ app.get(
 app.get(
   "/api/settings",
   asyncHandler((req, res) => {
-    res.json({ verifyDownloads: downloadManager.verifyDownloads });
+    res.json({
+      verifyDownloads: downloadManager.verifyDownloads,
+      paused: downloadManager.paused,
+    });
   }),
 );
 
@@ -115,7 +153,10 @@ app.patch(
     if (typeof verifyDownloads === "boolean") {
       downloadManager.verifyDownloads = verifyDownloads;
     }
-    res.json({ verifyDownloads: downloadManager.verifyDownloads });
+    res.json({
+      verifyDownloads: downloadManager.verifyDownloads,
+      paused: downloadManager.paused,
+    });
   }),
 );
 
@@ -147,6 +188,7 @@ wss.on("connection", (ws) => {
       JSON.stringify({
         type: WS_MESSAGE.STATUS,
         tasks: downloadManager.getStatus(),
+        paused: downloadManager.paused,
       }),
     );
   } catch {

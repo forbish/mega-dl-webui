@@ -21,6 +21,7 @@ export class DownloadManager extends EventEmitter {
     this.tasks = new Map();
     this.sessions = new Map();
     this.activeCount = 0;
+    this.paused = false;
     this.queue = [];
     this.handleRetries = (tries, error, cb) => {
       if (tries >= this.retryCount) return cb(error);
@@ -75,6 +76,7 @@ export class DownloadManager extends EventEmitter {
       existing &&
       (existing.status === TASK_STATUS.PENDING ||
         existing.status === TASK_STATUS.DOWNLOADING ||
+        existing.status === TASK_STATUS.PAUSED ||
         existing.status === TASK_STATUS.VERIFYING)
     ) {
       taskIds.push(id);
@@ -127,6 +129,7 @@ export class DownloadManager extends EventEmitter {
   }
 
   _processQueue() {
+    if (this.paused) return;
     while (this.activeCount < this.maxConcurrent && this.queue.length > 0) {
       const id = this.queue.shift();
       const task = this.tasks.get(id);
@@ -177,6 +180,10 @@ export class DownloadManager extends EventEmitter {
       });
       task._stream = stream;
 
+      if (this.paused) {
+        stream.pause();
+      }
+
       writeStream = fs.createWriteStream(
         partPath,
         resume ? { flags: "a" } : {},
@@ -186,7 +193,7 @@ export class DownloadManager extends EventEmitter {
 
       await new Promise((resolve, reject) => {
         stream.on("progress", (info) => {
-          if (task.status === TASK_STATUS.CANCELLED) return;
+          if (task.status === TASK_STATUS.CANCELLED || task.status === TASK_STATUS.PAUSED) return;
           task.bytesDownloaded = info.bytesLoaded + start;
           const update = tracker.update(task.bytesDownloaded);
           if (update) {
@@ -271,7 +278,8 @@ export class DownloadManager extends EventEmitter {
     for (const [id, task] of this.tasks) {
       if (
         task.status === TASK_STATUS.PENDING ||
-        task.status === TASK_STATUS.DOWNLOADING
+        task.status === TASK_STATUS.DOWNLOADING ||
+        task.status === TASK_STATUS.PAUSED
       ) {
         this.cancelTask(id);
       }
@@ -295,6 +303,32 @@ export class DownloadManager extends EventEmitter {
     task._existingStat = null;
     this.queue.push(id);
     this.emit("task:update", this._sanitizeTask(task));
+    this._processQueue();
+  }
+
+  pause() {
+    if (this.paused) return;
+    this.paused = true;
+    for (const task of this.tasks.values()) {
+      if (task.status === TASK_STATUS.DOWNLOADING) {
+        if (task._stream) task._stream.pause();
+        task.status = TASK_STATUS.PAUSED;
+        task.speed = 0;
+        this.emit("task:update", this._sanitizeTask(task));
+      }
+    }
+  }
+
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    for (const task of this.tasks.values()) {
+      if (task.status === TASK_STATUS.PAUSED) {
+        if (task._stream) task._stream.resume();
+        task.status = TASK_STATUS.DOWNLOADING;
+        this.emit("task:update", this._sanitizeTask(task));
+      }
+    }
     this._processQueue();
   }
 
@@ -358,6 +392,7 @@ export class DownloadManager extends EventEmitter {
       if (
         t.status === TASK_STATUS.PENDING ||
         t.status === TASK_STATUS.DOWNLOADING ||
+        t.status === TASK_STATUS.PAUSED ||
         t.status === TASK_STATUS.VERIFYING
       )
         return;

@@ -13,6 +13,7 @@ import {
   retryDownload,
   clearFinished,
   retryAllFailed,
+  togglePause,
 } from "./lib/downloads.js";
 import { connectWs } from "./lib/websocket.js";
 
@@ -21,6 +22,9 @@ async function fetchSettings() {
     const res = await fetch("/api/settings");
     const data = await res.json();
     $("#verify-downloads").checked = data.verifyDownloads;
+    if (typeof data.paused === "boolean") {
+      state.paused = data.paused;
+    }
   } catch {
     /* use default */
   }
@@ -77,6 +81,7 @@ function init() {
 
   $("#retry-all-failed").addEventListener("click", retryAllFailed);
   $("#clear-finished").addEventListener("click", clearFinished);
+  $("#pause-resume").addEventListener("click", togglePause);
 
   $("#verify-downloads").addEventListener("change", async (e) => {
     try {

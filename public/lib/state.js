@@ -6,6 +6,7 @@ export const state = {
   downloadCounts: {
     pending: 0,
     downloading: 0,
+    paused: 0,
     verifying: 0,
     completed: 0,
     skipped: 0,
@@ -14,6 +15,7 @@ export const state = {
   },
   ws: null,
   allDoneNotified: false,
+  paused: false,
 };
 
 export const $ = (sel) => document.querySelector(sel);

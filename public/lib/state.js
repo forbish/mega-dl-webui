@@ -13,7 +13,6 @@ export const state = {
     failed: 0,
     cancelled: 0,
   },
-  ws: null,
   allDoneNotified: false,
   paused: false,
 };

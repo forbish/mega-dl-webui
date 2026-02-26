@@ -16,7 +16,13 @@
       "automerge": true
     },
     {
+      "description": "Build and runtime Node major versions must match — update allowedVersions when changing the distroless base image",
       "matchDepNames": ["node"],
+      "allowedVersions": "^22",
+      "groupName": "node"
+    },
+    {
+      "matchDepNames": ["gcr.io/distroless/nodejs22-debian12"],
       "groupName": "node"
     }
   ]

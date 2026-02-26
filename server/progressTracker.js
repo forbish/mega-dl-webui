@@ -8,6 +8,13 @@ export class ProgressTracker {
     this.updateThreshold = 250; // milliseconds
   }
 
+  reset(currentBytes = 0) {
+    this.lastUpdate = Date.now();
+    this.lastBytes = currentBytes;
+    this.speed = 0;
+    this.eta = 0;
+  }
+
   shouldUpdate() {
     return Date.now() - this.lastUpdate >= this.updateThreshold;
   }

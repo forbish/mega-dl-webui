@@ -23,10 +23,6 @@ export class DownloadManager extends EventEmitter {
     this.activeCount = 0;
     this.paused = false;
     this.queue = [];
-    this.handleRetries = (tries, error, cb) => {
-      if (tries >= this.retryCount) return cb(error);
-      setTimeout(cb, 1000 * Math.pow(2, tries));
-    };
   }
 
   async addUrl(url) {
@@ -102,7 +98,7 @@ export class DownloadManager extends EventEmitter {
     if (!this.sessions.has(sessionId)) this.sessions.set(sessionId, new Set());
     this.sessions.get(sessionId).add(id);
 
-    if (fs.existsSync(destPath)) {
+    try {
       const stat = fs.statSync(destPath);
       if (stat.size >= megaNode.size) {
         task.status = TASK_STATUS.SKIPPED;
@@ -113,14 +109,14 @@ export class DownloadManager extends EventEmitter {
         taskIds.push(id);
         return;
       }
-    }
+    } catch { /* file doesn't exist — proceed */ }
 
     const partPath = destPath + ".part";
-    if (fs.existsSync(partPath)) {
+    try {
       const stat = fs.statSync(partPath);
       task._existingStat = stat;
       task.bytesDownloaded = stat.size;
-    }
+    } catch { /* no .part file — start fresh */ }
 
     this.tasks.set(id, task);
     this.queue.push(id);
@@ -164,19 +160,64 @@ export class DownloadManager extends EventEmitter {
 
       const partPath = task.destPath + ".part";
       let stat = task._existingStat;
-      if (!stat && fs.existsSync(partPath)) {
-        stat = fs.statSync(partPath);
+      if (!stat) {
+        try {
+          stat = fs.statSync(partPath);
+        } catch { /* no .part file */ }
       }
+
+      if (stat && stat.size >= megaNode.size) {
+        task.bytesDownloaded = megaNode.size;
+
+        let verified = true;
+        if (this.verifyDownloads && megaNode.key?.length === 32) {
+          try {
+            await this._verifyTask(task, megaNode, partPath);
+          } catch {
+            verified = false;
+          }
+        }
+
+        if (task.status === TASK_STATUS.CANCELLED) throw new Error("cancelled");
+
+        if (verified) {
+          fs.renameSync(partPath, task.destPath);
+          task.status = TASK_STATUS.COMPLETED;
+          task.completedAt = new Date().toISOString();
+          console.log(`Completed: ${task.name}`);
+          task._stream = null;
+          this.emit("task:update", this._sanitizeTask(task));
+          this._tryCleanSession(task.id);
+          return;
+        }
+
+        task.status = TASK_STATUS.DOWNLOADING;
+        task.bytesDownloaded = 0;
+        task.error = null;
+        this.emit("task:update", this._sanitizeTask(task));
+        console.log(`Removing corrupt .part for re-download: ${task.name}`);
+        try { fs.unlinkSync(partPath); } catch { /* already gone */ }
+      }
+
       if (stat && stat.size > 0 && stat.size < megaNode.size) {
         start = stat.size;
         resume = true;
       }
 
       const tracker = new ProgressTracker(megaNode.size);
+      task._tracker = tracker;
+
+      const handleRetries = (tries, error, cb) => {
+        if (tries >= this.retryCount) return cb(error);
+        setTimeout(() => {
+          if (task.status === TASK_STATUS.CANCELLED) return cb(new Error("cancelled"));
+          cb();
+        }, 1000 * Math.pow(2, tries));
+      };
 
       const { stream } = megaClient.downloadFile(megaNode, {
         start,
-        handleRetries: this.handleRetries,
+        handleRetries,
       });
       task._stream = stream;
 
@@ -216,11 +257,14 @@ export class DownloadManager extends EventEmitter {
         await this._verifyTask(task, megaNode, partPath);
       }
 
+      if (task.status === TASK_STATUS.CANCELLED) throw new Error("cancelled");
+
       fs.renameSync(partPath, task.destPath);
       task.status = TASK_STATUS.COMPLETED;
       task.completedAt = new Date().toISOString();
       console.log(`Completed: ${task.name}`);
     } catch (err) {
+      task._stream?.destroy();
       writeStream?.destroy();
       if (task.status === TASK_STATUS.CANCELLED) return;
       if (task.status !== TASK_STATUS.FAILED) {
@@ -244,6 +288,7 @@ export class DownloadManager extends EventEmitter {
 
       const verifyStream = verify(megaNode.key);
       const readStream = fs.createReadStream(filePath);
+      task._verifyStream = readStream;
       await new Promise((resolve, reject) => {
         readStream.on("error", reject);
         verifyStream.on("error", reject);
@@ -252,24 +297,39 @@ export class DownloadManager extends EventEmitter {
       });
       console.log(`Verified: ${task.name}`);
     } catch (err) {
-      task.status = TASK_STATUS.FAILED;
-      task.error = `Verification failed: ${err.message}`;
-      console.error(`Verification failed: ${task.name} - ${err.message}`);
+      if (task.status !== TASK_STATUS.CANCELLED) {
+        task.status = TASK_STATUS.FAILED;
+        task.error = `Verification failed: ${err.message}`;
+        console.error(`Verification failed: ${task.name} - ${err.message}`);
+      }
       throw err;
+    } finally {
+      task._verifyStream = null;
     }
   }
 
   cancelTask(id) {
     const task = this.tasks.get(id);
     if (!task) return;
+    if (
+      task.status !== TASK_STATUS.PENDING &&
+      task.status !== TASK_STATUS.DOWNLOADING &&
+      task.status !== TASK_STATUS.PAUSED &&
+      task.status !== TASK_STATUS.VERIFYING
+    )
+      return;
 
     if (task._stream) {
       task._stream.destroy(new Error("Download cancelled"));
+    }
+    if (task._verifyStream) {
+      task._verifyStream.destroy();
     }
 
     task.status = TASK_STATUS.CANCELLED;
     task.speed = 0;
     task._stream = null;
+    task._verifyStream = null;
     this.emit("task:update", this._sanitizeTask(task));
     this._tryCleanSession(id);
   }
@@ -279,12 +339,22 @@ export class DownloadManager extends EventEmitter {
       if (
         task.status === TASK_STATUS.PENDING ||
         task.status === TASK_STATUS.DOWNLOADING ||
-        task.status === TASK_STATUS.PAUSED
+        task.status === TASK_STATUS.PAUSED ||
+        task.status === TASK_STATUS.VERIFYING
       ) {
         this.cancelTask(id);
       }
     }
     this.queue = [];
+  }
+
+  _resetTaskForRetry(task) {
+    task.status = TASK_STATUS.PENDING;
+    task.bytesDownloaded = 0;
+    task.error = null;
+    task.speed = 0;
+    task.completedAt = null;
+    task._existingStat = null;
   }
 
   retryTask(id) {
@@ -296,11 +366,7 @@ export class DownloadManager extends EventEmitter {
     )
       return;
 
-    task.status = TASK_STATUS.PENDING;
-    task.error = null;
-    task.speed = 0;
-    task.completedAt = null;
-    task._existingStat = null;
+    this._resetTaskForRetry(task);
     this.queue.push(id);
     this.emit("task:update", this._sanitizeTask(task));
     this._processQueue();
@@ -325,6 +391,7 @@ export class DownloadManager extends EventEmitter {
     for (const task of this.tasks.values()) {
       if (task.status === TASK_STATUS.PAUSED) {
         if (task._stream) task._stream.resume();
+        if (task._tracker) task._tracker.reset(task.bytesDownloaded);
         task.status = TASK_STATUS.DOWNLOADING;
         this.emit("task:update", this._sanitizeTask(task));
       }
@@ -335,11 +402,7 @@ export class DownloadManager extends EventEmitter {
   retryAllFailed() {
     for (const [id, task] of this.tasks) {
       if (task.status !== TASK_STATUS.FAILED) continue;
-      task.status = TASK_STATUS.PENDING;
-      task.error = null;
-      task.speed = 0;
-      task.completedAt = null;
-      task._existingStat = null;
+      this._resetTaskForRetry(task);
       this.queue.push(id);
       this.emit("task:update", this._sanitizeTask(task));
     }
@@ -404,13 +467,7 @@ export class DownloadManager extends EventEmitter {
     this.sessions.delete(sessionId);
   }
 
-  _sanitizeTask(task) {
-    const clean = {};
-    for (const [key, value] of Object.entries(task)) {
-      if (!key.startsWith("_") && key !== "destPath") {
-        clean[key] = value;
-      }
-    }
+  _sanitizeTask({ _stream, _verifyStream, _tracker, _existingStat, _demo, destPath, ...clean }) {
     return clean;
   }
 }

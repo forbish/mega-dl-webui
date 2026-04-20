@@ -22,6 +22,8 @@ describe("DownloadManager", () => {
         startedAt: null,
         completedAt: null,
         _stream: null,
+        _verifyStream: null,
+        _tracker: { speed: 0 },
         _existingStat: null,
       };
 
@@ -32,6 +34,8 @@ describe("DownloadManager", () => {
       assert.equal(clean.size, 1024);
       assert.equal(clean.status, "pending");
       assert.equal(clean._stream, undefined);
+      assert.equal(clean._verifyStream, undefined);
+      assert.equal(clean._tracker, undefined);
       assert.equal(clean._existingStat, undefined);
       assert.equal(clean.destPath, undefined);
     });
@@ -48,6 +52,27 @@ describe("DownloadManager", () => {
     it("does nothing for nonexistent task", () => {
       const dm = new DownloadManager("/tmp");
       dm.cancelTask("nonexistent");
+    });
+
+    it("does nothing for completed tasks", () => {
+      const dm = new DownloadManager("/tmp");
+      const task = {
+        id: "s1-0",
+        name: "test.txt",
+        size: 100,
+        status: TASK_STATUS.COMPLETED,
+        bytesDownloaded: 100,
+        speed: 0,
+        error: null,
+        destPath: "/tmp/test.txt",
+        startedAt: null,
+        completedAt: new Date().toISOString(),
+        _stream: null,
+        _existingStat: null,
+      };
+      dm.tasks.set("s1-0", task);
+      dm.cancelTask("s1-0");
+      assert.equal(task.status, TASK_STATUS.COMPLETED);
     });
   });
 
@@ -475,6 +500,29 @@ describe("DownloadManager", () => {
 
       assert.equal(task.status, TASK_STATUS.CANCELLED);
       assert.equal(streamDestroyed, true);
+    });
+
+    it("cancels VERIFYING tasks", () => {
+      const dm = new DownloadManager("/tmp");
+      const task = {
+        id: "s1-0",
+        name: "test.txt",
+        size: 1000,
+        status: TASK_STATUS.VERIFYING,
+        bytesDownloaded: 1000,
+        speed: 0,
+        error: null,
+        destPath: "/tmp/test.txt",
+        startedAt: null,
+        completedAt: null,
+        _stream: null,
+        _existingStat: null,
+      };
+      dm.tasks.set("s1-0", task);
+
+      dm.cancelAll();
+
+      assert.equal(task.status, TASK_STATUS.CANCELLED);
     });
   });
 });

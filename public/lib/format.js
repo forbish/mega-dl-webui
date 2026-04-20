@@ -1,5 +1,5 @@
 export function formatBytes(bytes) {
-  if (bytes == null || bytes === 0) return "0 B";
+  if (bytes == null || !Number.isFinite(bytes) || bytes <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.min(
     Math.floor(Math.log(bytes) / Math.log(1024)),
@@ -14,7 +14,7 @@ export function formatSpeed(bytesPerSec) {
 }
 
 export function formatDuration(ms) {
-  if (!ms || ms < 0) return "—";
+  if (!ms || !isFinite(ms) || ms < 0) return "—";
   const sec = Math.floor(ms / 1000);
   if (sec < 60) return `${sec}s`;
   const min = Math.floor(sec / 60);
@@ -26,9 +26,11 @@ export function formatDuration(ms) {
 }
 
 export function escapeHtml(str) {
-  return str
+  if (str == null) return "";
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

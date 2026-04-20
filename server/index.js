@@ -82,15 +82,7 @@ app.post(
   "/api/pause",
   asyncHandler((req, res) => {
     downloadManager.pause();
-    broadcastQueue.clear();
-    broadcastToClients(
-      wss,
-      JSON.stringify({
-        type: WS_MESSAGE.STATUS,
-        tasks: downloadManager.getStatus(),
-        paused: downloadManager.paused,
-      }),
-    );
+    broadcastFullStatus();
     res.json({ paused: downloadManager.paused });
   }),
 );
@@ -99,15 +91,7 @@ app.post(
   "/api/resume",
   asyncHandler((req, res) => {
     downloadManager.resume();
-    broadcastQueue.clear();
-    broadcastToClients(
-      wss,
-      JSON.stringify({
-        type: WS_MESSAGE.STATUS,
-        tasks: downloadManager.getStatus(),
-        paused: downloadManager.paused,
-      }),
-    );
+    broadcastFullStatus();
     res.json({ paused: downloadManager.paused });
   }),
 );
@@ -116,15 +100,7 @@ app.post(
   "/api/clear",
   asyncHandler((req, res) => {
     downloadManager.clearFinished();
-    broadcastQueue.clear();
-    broadcastToClients(
-      wss,
-      JSON.stringify({
-        type: WS_MESSAGE.STATUS,
-        tasks: downloadManager.getStatus(),
-        paused: downloadManager.paused,
-      }),
-    );
+    broadcastFullStatus();
     res.json({ success: true });
   }),
 );
@@ -182,7 +158,28 @@ const server = createServer(app);
 
 const wss = new WebSocketServer({ server, path: "/ws" });
 
+const broadcastQueue = new Map();
+downloadManager.on("task:update", (task) => {
+  broadcastQueue.set(task.id, task);
+});
+
+function broadcastFullStatus() {
+  broadcastQueue.clear();
+  broadcastToClients(
+    wss,
+    JSON.stringify({
+      type: WS_MESSAGE.STATUS,
+      tasks: downloadManager.getStatus(),
+      paused: downloadManager.paused,
+    }),
+  );
+}
+
 wss.on("connection", (ws) => {
+  ws.isAlive = true;
+  ws.on("pong", () => {
+    ws.isAlive = true;
+  });
   try {
     ws.send(
       JSON.stringify({
@@ -196,12 +193,18 @@ wss.on("connection", (ws) => {
   }
 });
 
-const broadcastQueue = new Map();
-downloadManager.on("task:update", (task) => {
-  broadcastQueue.set(task.id, task);
-});
+const heartbeatInterval = setInterval(() => {
+  for (const ws of wss.clients) {
+    if (!ws.isAlive) {
+      ws.terminate();
+      continue;
+    }
+    ws.isAlive = false;
+    ws.ping();
+  }
+}, 30_000);
 
-setInterval(() => {
+const broadcastFlushInterval = setInterval(() => {
   if (broadcastQueue.size === 0) return;
   const message = JSON.stringify({
     type: WS_MESSAGE.TASKS_UPDATE,
@@ -221,6 +224,8 @@ server.listen(PORT, () => {
 
 function shutdown() {
   console.log("Shutting down...");
+  clearInterval(heartbeatInterval);
+  clearInterval(broadcastFlushInterval);
   for (const client of wss.clients) {
     client.close();
   }

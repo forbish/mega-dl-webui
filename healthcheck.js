@@ -1,6 +1,7 @@
 import http from "node:http";
 
-const req = http.get("http://localhost:8080/api/health", (res) => {
+const port = process.env.PORT || 8080;
+const req = http.get(`http://localhost:${port}/api/health`, (res) => {
   process.exit(res.statusCode === 200 ? 0 : 1);
 });
 

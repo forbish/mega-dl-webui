@@ -8,6 +8,17 @@ import {
 } from "./format.js";
 import { showToast } from "./toast.js";
 
+const STATUS_ORDER = {
+  [TASK_STATUS.DOWNLOADING]: 0,
+  [TASK_STATUS.PAUSED]: 1,
+  [TASK_STATUS.VERIFYING]: 2,
+  [TASK_STATUS.PENDING]: 3,
+  [TASK_STATUS.COMPLETED]: 4,
+  [TASK_STATUS.SKIPPED]: 5,
+  [TASK_STATUS.FAILED]: 6,
+  [TASK_STATUS.CANCELLED]: 7,
+};
+
 const STATUS_CONFIG = {
   [TASK_STATUS.DOWNLOADING]: {
     detail: (task) => {
@@ -32,7 +43,7 @@ const STATUS_CONFIG = {
   },
   [TASK_STATUS.VERIFYING]: {
     detail: (task) => `${formatBytes(task.size)} — Verifying integrity…`,
-    canCancel: false,
+    canCancel: true,
     canRetry: false,
   },
   [TASK_STATUS.PAUSED]: {
@@ -168,7 +179,7 @@ export async function clearFinished() {
   }
 }
 
-function renderDownloadCard(task) {
+export function renderDownloadCard(task) {
   const pct =
     task.size > 0 ? Math.round((task.bytesDownloaded / task.size) * 100) : 0;
   const config = STATUS_CONFIG[task.status] || {};
@@ -204,7 +215,7 @@ function renderDownloadCard(task) {
   </div>`;
 }
 
-function updateDownloadSummary() {
+export function updateDownloadSummary() {
   const el = $("#dl-summary");
   const counts = state.downloadCounts;
 
@@ -250,19 +261,9 @@ export function renderDownloads() {
   }
 
   empty.style.display = "none";
-  const sorted = Array.from(state.downloads.values()).sort((a, b) => {
-    const order = {
-      [TASK_STATUS.DOWNLOADING]: 0,
-      [TASK_STATUS.PAUSED]: 1,
-      [TASK_STATUS.VERIFYING]: 2,
-      [TASK_STATUS.PENDING]: 3,
-      [TASK_STATUS.COMPLETED]: 4,
-      [TASK_STATUS.SKIPPED]: 5,
-      [TASK_STATUS.FAILED]: 6,
-      [TASK_STATUS.CANCELLED]: 7,
-    };
-    return (order[a.status] ?? 9) - (order[b.status] ?? 9);
-  });
+  const sorted = Array.from(state.downloads.values()).sort(
+    (a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9),
+  );
   list.innerHTML = sorted.map(renderDownloadCard).join("");
   updateDownloadSummary();
 }
@@ -278,15 +279,6 @@ export function updateSingleDownload(task) {
     (state.downloadCounts[task.status] || 0) + 1;
 
   state.downloads.set(task.id, task);
-  const card = $(`.dl-card[data-task-id="${CSS.escape(task.id)}"]`);
-  if (card) {
-    const temp = document.createElement("div");
-    temp.innerHTML = renderDownloadCard(task);
-    card.replaceWith(temp.firstElementChild);
-  } else {
-    renderDownloads();
-  }
-  updateDownloadSummary();
 }
 
 export function updatePauseButton() {
@@ -328,17 +320,9 @@ export async function togglePause() {
 
 export function checkAllDoneNotification() {
   if (state.downloads.size === 0 || state.allDoneNotified) return;
-  const terminal = new Set([
-    TASK_STATUS.COMPLETED,
-    TASK_STATUS.SKIPPED,
-    TASK_STATUS.FAILED,
-    TASK_STATUS.CANCELLED,
-  ]);
-  const allDone = Array.from(state.downloads.values()).every((t) =>
-    terminal.has(t.status),
-  );
-  if (!allDone) return;
   const counts = state.downloadCounts;
+  if (counts.downloading || counts.pending || counts.paused || counts.verifying)
+    return;
   const parts = [];
   if (counts.completed) parts.push(`${counts.completed} completed`);
   if (counts.skipped) parts.push(`${counts.skipped} skipped`);

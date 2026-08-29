@@ -9,6 +9,10 @@ export function showToast(message, type = "success") {
 
   setTimeout(() => {
     toast.classList.add("removing");
-    toast.addEventListener("animationend", () => toast.remove());
+    const fallback = setTimeout(() => toast.remove(), 300);
+    toast.addEventListener("animationend", () => {
+      clearTimeout(fallback);
+      toast.remove();
+    });
   }, 5000);
 }

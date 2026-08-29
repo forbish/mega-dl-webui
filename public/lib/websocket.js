@@ -3,6 +3,8 @@ import { state, $ } from "./state.js";
 import {
   updateSingleDownload,
   renderDownloads,
+  renderDownloadCard,
+  updateDownloadSummary,
   checkAllDoneNotification,
   updatePauseButton,
 } from "./downloads.js";
@@ -12,7 +14,6 @@ let reconnectDelay = 1000;
 export function connectWs() {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   const ws = new WebSocket(`${protocol}//${location.host}/ws`);
-  state.ws = ws;
 
   ws.addEventListener("open", () => {
     reconnectDelay = 1000;
@@ -52,9 +53,25 @@ export function connectWs() {
       msg.type === WS_MESSAGE.TASKS_UPDATE &&
       Array.isArray(msg.data)
     ) {
+      let needsFullRender = false;
       for (const task of msg.data) {
+        const isNew = !state.downloads.has(task.id);
         updateSingleDownload(task);
+        if (isNew) {
+          needsFullRender = true;
+        } else if (!needsFullRender) {
+          const card = $(`.dl-card[data-task-id="${CSS.escape(task.id)}"]`);
+          if (card) {
+            const temp = document.createElement("div");
+            temp.innerHTML = renderDownloadCard(task);
+            card.replaceWith(temp.firstElementChild);
+          } else {
+            needsFullRender = true;
+          }
+        }
       }
+      if (needsFullRender) renderDownloads();
+      else updateDownloadSummary();
       const empty = $("#no-downloads");
       if (state.downloads.size > 0) empty.style.display = "none";
 
@@ -62,7 +79,8 @@ export function connectWs() {
         (t) =>
           t.status === TASK_STATUS.DOWNLOADING ||
           t.status === TASK_STATUS.PENDING ||
-          t.status === TASK_STATUS.PAUSED,
+          t.status === TASK_STATUS.PAUSED ||
+          t.status === TASK_STATUS.VERIFYING,
       );
       if (hasActive) state.allDoneNotified = false;
 
@@ -71,7 +89,6 @@ export function connectWs() {
   });
 
   ws.addEventListener("close", () => {
-    state.ws = null;
     setTimeout(() => {
       connectWs();
       reconnectDelay = Math.min(reconnectDelay * 2, 30000);

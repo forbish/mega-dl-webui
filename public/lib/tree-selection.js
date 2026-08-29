@@ -7,10 +7,6 @@ export class TreeSelection {
     return this._selected.size;
   }
 
-  has(id) {
-    return this._selected.has(id);
-  }
-
   set(nodeId, isDir, childFileIds, checked) {
     if (isDir) {
       childFileIds.forEach((id) =>

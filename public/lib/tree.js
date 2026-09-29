@@ -29,7 +29,7 @@ function renderTreeNode(node, depth) {
     : `<svg class="icon tree-icon"><use href="#icon-file"/></svg>`;
 
   const childrenHtml = hasChildren
-    ? `<div class="tree-children" data-parent="${node.id}">${node.children.map((c) => renderTreeNode(c, depth + 1)).join("")}</div>`
+    ? `<div class="tree-children" data-parent="${escapeHtml(node.id)}">${node.children.map((c) => renderTreeNode(c, depth + 1)).join("")}</div>`
     : "";
 
   return `<div class="tree-item" data-id="${escapeHtml(node.id)}" data-dir="${isDir}" style="--depth:${depth}">
@@ -46,7 +46,7 @@ function updateCheckboxStates() {
   folders.forEach((cb) => {
     const nodeId = cb.dataset.id;
     const container = document.querySelector(
-      `.tree-children[data-parent="${nodeId}"]`,
+      `.tree-children[data-parent="${CSS.escape(nodeId)}"]`,
     );
     if (!container) return;
 
@@ -55,12 +55,12 @@ function updateCheckboxStates() {
     );
     if (directChildCheckboxes.length === 0) return;
 
-    const allChecked = Array.from(directChildCheckboxes).every(
-      (c) => c.checked && !c.indeterminate,
-    );
-    const someChecked = Array.from(directChildCheckboxes).some(
-      (c) => c.checked || c.indeterminate,
-    );
+    let allChecked = true;
+    let someChecked = false;
+    for (const c of directChildCheckboxes) {
+      if (c.checked || c.indeterminate) someChecked = true;
+      if (!c.checked || c.indeterminate) allChecked = false;
+    }
     cb.checked = allChecked;
     cb.indeterminate = someChecked && !allChecked;
   });
@@ -79,7 +79,7 @@ export function handleTreeClick(e) {
     const isChecked = checkbox.checked;
     if (isDir) {
       const container = document.querySelector(
-        `.tree-children[data-parent="${nodeId}"]`,
+        `.tree-children[data-parent="${CSS.escape(nodeId)}"]`,
       );
       if (container) {
         const childFileIds = Array.from(
@@ -101,7 +101,7 @@ export function handleTreeClick(e) {
   if (isDir && toggle) {
     toggle.classList.toggle("expanded");
     const container = document.querySelector(
-      `.tree-children[data-parent="${nodeId}"]`,
+      `.tree-children[data-parent="${CSS.escape(nodeId)}"]`,
     );
     if (container) {
       if (container.classList.contains("collapsed")) {

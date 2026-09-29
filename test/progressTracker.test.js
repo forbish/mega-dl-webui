@@ -1,4 +1,4 @@
-import { describe, it, mock } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { ProgressTracker } from "../server/progressTracker.js";
 
@@ -31,5 +31,27 @@ describe("ProgressTracker", () => {
     tracker.lastBytes = 0;
     const result = tracker.update(5000);
     assert.ok(result.eta > 0 && result.eta < 3);
+  });
+
+  it("reset sets lastBytes to given value and refreshes timestamp", () => {
+    const tracker = new ProgressTracker(10000);
+    tracker.lastBytes = 999;
+    tracker.speed = 500;
+    tracker.eta = 10;
+
+    tracker.reset(5000);
+
+    assert.equal(tracker.lastBytes, 5000);
+    assert.equal(tracker.speed, 0);
+    assert.equal(tracker.eta, 0);
+  });
+
+  it("reset defaults lastBytes to 0", () => {
+    const tracker = new ProgressTracker(10000);
+    tracker.lastBytes = 999;
+
+    tracker.reset();
+
+    assert.equal(tracker.lastBytes, 0);
   });
 });

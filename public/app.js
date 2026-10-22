@@ -85,11 +85,15 @@ function init() {
 
   $("#verify-downloads").addEventListener("change", async (e) => {
     try {
-      await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ verifyDownloads: e.target.checked }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update setting");
+      }
     } catch {
       showToast("Failed to update setting", "error");
       e.target.checked = !e.target.checked;
